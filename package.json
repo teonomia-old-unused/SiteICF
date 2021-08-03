@@ -1,0 +1,29 @@
+{
+  "name": "ICF",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Alvaro Separovich",
+  "license": "MIT",
+  "scripts": {
+    "watch": "tsc --watch",
+    "compile": "tsc",
+    "dev": "tsc | sls offline",
+    "lint": "eslint . --ext .ts"
+  },
+  "dependencies": {
+    "joi": "^17.4.2"
+  },
+  "devDependencies": {
+    "serverless": "^2.52.1",
+    "@tsconfig/node14": "^1.0.1",
+    "@types/joi": "^17.2.3",
+    "@typescript-eslint/eslint-plugin": "^4.29.0",
+    "@typescript-eslint/parser": "^4.29.0",
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.23.4",
+    "jest": "^27.0.6",
+    "serverless-offline": "^8.0.0",
+    "serverless-stack-output": "^0.2.3"
+  }
+}

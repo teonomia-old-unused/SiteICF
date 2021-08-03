@@ -1,0 +1,56 @@
+service: ICF-cognito
+
+custom:
+  stage: ${opt:stage, 'staging'}
+  region: "sa-east-1"
+  service-name: ICF-cognito
+  staging:
+    stage: staging
+  production:
+    stage: production
+  output:
+    handler: scripts/output.printIt # Same syntax as you already know
+    file: .build/cognito-stack-${self:custom.stage}.json # toml, yaml, yml, and json format is available
+
+provider:
+  name: aws
+  stage: ${self:custom.stage}
+  region: ${self:custom.region}
+resources:
+  Resources:
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:custom.service-name}-${self:provider.stage}
+        AutoVerifiedAttributes:
+            - phone_number
+        AliasAttributes:
+            - email
+        Schema:
+            - AttributeDataType: String
+              Name: role
+              Mutable: true
+      DeletionPolicy: Retain
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:custom.service-name}-${self:provider.stage}
+        UserPoolId:
+          Ref: CognitoUserPool
+        ExplicitAuthFlows:
+            - ADMIN_NO_SRP_AUTH
+            - USER_PASSWORD_AUTH
+        GenerateSecret: false
+      DeletionPolicy: Retain
+  Outputs:
+    CognitoUserPool:
+      Description: poolId
+      Value: 
+        Ref: CognitoUserPool
+    CognitoUserPoolClient:
+      Description: clientId
+      Value: 
+        Ref: CognitoUserPoolClient
+
+plugins:
+  - serverless-stack-output

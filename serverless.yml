@@ -1,0 +1,65 @@
+service: ICF-users
+
+custom:
+  stage: ${opt:stage, 'staging'}
+  region: "sa-east-1"
+  service-name: ICF-users
+  staging:
+    stage: staging
+  production:
+    stage: production
+  beta:
+    stage: production
+  output:
+    handler: scripts/output.handler # Same syntax as you already know
+    file: .build/stack-${self:custom.stage}.json # toml, yaml, yml, and json format is available
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: ${self:custom.stage}
+  region: ${self:custom.region}
+  memorySize: 256
+  environment:
+    AWS_DEPLOY_REGION: ${self:custom.region}
+    STAGE: ${self:custom.stage}
+  #   POOL_ID: ${file(.build/cognito-stack-${self:custom.${self:custom.stage}.stage}.json):CognitoUserPool}
+  #   CLIENT_ID: ${file(.build/cognito-stack-${self:custom.${self:custom.stage}.stage}.json):CognitoUserPoolClient}
+  #   ISS_CLAIM: https://cognito-idp.sa-east-1.amazonaws.com/${file(.build/cognito-stack-${self:custom.${self:custom.stage}.stage}.json):CognitoUserPool}
+
+  # iamRoleStatements:
+  # - Effect: Allow
+  #   Action: 
+  #     - cognito-idp:ListUsers
+  #     - cognito-idp:AdminDeleteUser
+  #   Resource:
+  #     - arn:aws:cognito-idp:sa-east-1::userpool/${file(.build/cognito-stack-${self:custom.${self:custom.stage}.stage}.json):CognitoUserPool}
+functions:
+  register:
+    handler: users/js/handler.js.register
+    events:
+      - http:
+          path: /user
+          method: POST
+  # login:
+  #   handler: users/handler.login
+  # confirmUserRegistration:
+  #   handler: users/handler.confirmUserRegistration
+  # forgotPassword:
+  #   handler: users/handler.forgotPassword
+  # forgotPasswordConfirmation:
+  #   handler: users/handler.forgotPasswordConfirmation
+  # testAuth:
+  #   handler: users/handler.testAuth
+  # authorizerFunc:
+  #   handler: users/handler.validateToken
+  # refreshUserTokens:
+  #   handler: users/handler.refreshUserTokens
+  # resendSignUpConfirmationCode:
+  #   handler: users/handler.resendSignUpConfirmationCode
+
+
+plugins:
+  - serverless-offline
+  # - serverless-plugin-swagger-api
+  - serverless-stack-output
