@@ -1,17 +1,15 @@
-service: ICF-users
+service: ICF
 
 custom:
   stage: ${opt:stage, 'staging'}
   region: "sa-east-1"
-  service-name: ICF-users
+  service-name: ICF
   staging:
     stage: staging
   production:
     stage: production
-  beta:
-    stage: production
   output:
-    handler: scripts/output.handler # Same syntax as you already know
+    # handler: scripts/output.handler # Same syntax as you already know
     file: .build/stack-${self:custom.stage}.json # toml, yaml, yml, and json format is available
 
 provider:
@@ -20,12 +18,13 @@ provider:
   stage: ${self:custom.stage}
   region: ${self:custom.region}
   memorySize: 256
+  lambdaHashingVersion: 20201221
   environment:
     AWS_DEPLOY_REGION: ${self:custom.region}
     STAGE: ${self:custom.stage}
-  #   POOL_ID: ${file(.build/cognito-stack-${self:custom.${self:custom.stage}.stage}.json):CognitoUserPool}
-  #   CLIENT_ID: ${file(.build/cognito-stack-${self:custom.${self:custom.stage}.stage}.json):CognitoUserPoolClient}
-  #   ISS_CLAIM: https://cognito-idp.sa-east-1.amazonaws.com/${file(.build/cognito-stack-${self:custom.${self:custom.stage}.stage}.json):CognitoUserPool}
+    POOL_ID: ${file(.build/stack-${self:custom.${self:custom.stage}.stage}.json):CognitoUserPool}
+    CLIENT_ID: ${file(.build/stack-${self:custom.${self:custom.stage}.stage}.json):CognitoUserPoolClient}
+    ISS_CLAIM: https://cognito-idp.sa-east-1.amazonaws.com/${file(.build/stack-${self:custom.${self:custom.stage}.stage}.json):CognitoUserPool}
 
   # iamRoleStatements:
   # - Effect: Allow
@@ -41,25 +40,105 @@ functions:
       - http:
           path: /user
           method: POST
-  # login:
-  #   handler: users/handler.login
-  # confirmUserRegistration:
-  #   handler: users/handler.confirmUserRegistration
-  # forgotPassword:
-  #   handler: users/handler.forgotPassword
-  # forgotPasswordConfirmation:
-  #   handler: users/handler.forgotPasswordConfirmation
-  # testAuth:
-  #   handler: users/handler.testAuth
-  # authorizerFunc:
-  #   handler: users/handler.validateToken
-  # refreshUserTokens:
-  #   handler: users/handler.refreshUserTokens
-  # resendSignUpConfirmationCode:
-  #   handler: users/handler.resendSignUpConfirmationCode
+  login:
+    handler: users/js/handler.js.login
+    events:
+      - http:
+          path: /user/login
+          method: POST
+  confirmSignUp:
+    handler: users/js/handler.js.confirmSignUp
+    events:
+      - http:
+          path: /user/confirmSignUp
+          method: POST
+  resendConfirmationCode:
+    handler: users/js/handler.js.resendConfirmationCode
+    events:
+      - http:
+          path: /user/resendConfirmationCode
+          method: POST
+  refreshToken:
+    handler: users/js/handler.js.refreshToken
+    events:
+      - http:
+          path: /user/refreshToken
+          method: POST
+  forgotPassword:
+    handler: users/js/handler.js.forgotPassword
+    events:
+      - http:
+          path: /user/forgotPassword
+          method: POST
+  confirmForgotPassword:
+    handler: users/js/handler.js.confirmForgotPassword
+    events:
+      - http:
+          path: /user/confirmForgotPassword
+          method: POST
 
+
+resources:
+  Resources:
+    dynamoTable:
+      Type: AWS::DynamoDB::Table
+      Properties: 
+        TableName: ${self:custom.service-name}-${self:provider.stage}
+        AttributeDefinitions: 
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema: 
+          - AttributeName: PK
+            KeyType: HASH
+          - AttributeName: SK
+            KeyType: RANGE
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:custom.service-name}-${self:provider.stage}
+        AutoVerifiedAttributes:
+            - email
+        AliasAttributes:
+            - email
+        Schema:
+            - AttributeDataType: String
+              Name: role
+              Mutable: true
+            - AttributeDataType: String
+              Name: username
+              Mutable: false
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 6
+            RequireLowercase: false
+            RequireNumbers: false
+            RequireSymbols: false
+            RequireUppercase: false
+      # DeletionPolicy: Retain
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:custom.service-name}-${self:provider.stage}
+        UserPoolId:
+          Ref: CognitoUserPool
+        ExplicitAuthFlows:
+            - ADMIN_NO_SRP_AUTH
+            - USER_PASSWORD_AUTH
+        GenerateSecret: false
+      # DeletionPolicy: Retain
+  Outputs:
+    CognitoUserPool:
+      Description: poolId
+      Value: 
+        Ref: CognitoUserPool
+    CognitoUserPoolClient:
+      Description: clientId
+      Value: 
+        Ref: CognitoUserPoolClient
 
 plugins:
   - serverless-offline
-  # - serverless-plugin-swagger-api
   - serverless-stack-output
