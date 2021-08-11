@@ -35,43 +35,43 @@ provider:
   #     - arn:aws:cognito-idp:sa-east-1::userpool/${file(.build/cognito-stack-${self:custom.${self:custom.stage}.stage}.json):CognitoUserPool}
 functions:
   register:
-    handler: users/js/handler.js.register
+    handler: js/users/handler.js.register
     events:
       - http:
           path: /user
           method: POST
   login:
-    handler: users/js/handler.js.login
+    handler: js/users/handler.js.login
     events:
       - http:
           path: /user/login
           method: POST
   confirmSignUp:
-    handler: users/js/handler.js.confirmSignUp
+    handler: js/users/handler.js.confirmSignUp
     events:
       - http:
           path: /user/confirmSignUp
           method: POST
   resendConfirmationCode:
-    handler: users/js/handler.js.resendConfirmationCode
+    handler: js/users/handler.js.resendConfirmationCode
     events:
       - http:
           path: /user/resendConfirmationCode
           method: POST
   refreshToken:
-    handler: users/js/handler.js.refreshToken
+    handler: js/users/handler.js.refreshToken
     events:
       - http:
           path: /user/refreshToken
           method: POST
   forgotPassword:
-    handler: users/js/handler.js.forgotPassword
+    handler: js/users/handler.js.forgotPassword
     events:
       - http:
           path: /user/forgotPassword
           method: POST
   confirmForgotPassword:
-    handler: users/js/handler.js.confirmForgotPassword
+    handler: js/users/handler.js.confirmForgotPassword
     events:
       - http:
           path: /user/confirmForgotPassword
